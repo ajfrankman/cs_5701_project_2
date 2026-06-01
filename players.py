@@ -49,6 +49,7 @@ class MiniMaxAI(Player):
         super().__init__(player_number=player_number)
         # Add variables unique ONLY to the AI
         self.max_depth = max_depth
+        self.min_player_number = 1 if player_number == 2 else 2
 
     def get_move(self, board: Board):
         best_move = None # best column
@@ -56,45 +57,45 @@ class MiniMaxAI(Player):
         valid_moves = board.get_valid_moves()
         debug_dict = {}
         for move in valid_moves:
-            value = self._maxMove(self.player_number, board, move, 1)
+            next_board = board.copy()
+            next_board.drop_piece(move, self.player_number)
+            value = self._minMove(next_board, 1)
             debug_dict[move] = value
             if value > best_so_far:
                 best_so_far = value
                 best_move = move
         return best_move
 
-    def _minMove(self, player_num: int, board: Board, move: int, current_depth: int):
-        other_player_num = 1 if player_num == 2 else 2
-        board_copy = board.copy()
-        board_copy.drop_piece(move, player_num)
-        if board_copy.check_win(player_num):
-            return MIN_SCORE
-        if board_copy.board_is_full():
+    def _minMove(self, board: Board, current_depth: int):
+        if board.check_win(self.player_number):
+            return MAX_SCORE
+        if board.board_is_full():
             return 0
         if current_depth == self.max_depth:
-            return board_copy.get_score(player_num=self.player_number)
+            return board.get_score(player_num=self.player_number)
         min_val = MAX_SCORE
-        valid_moves = board_copy.get_valid_moves()
+        valid_moves = board.get_valid_moves()
         for next_move in valid_moves:
-            value = self._maxMove(other_player_num, board_copy, next_move, current_depth+1)
+            next_board = board.copy()
+            next_board.drop_piece(next_move, self.min_player_number)
+            value = self._maxMove(next_board, current_depth+1)
             if value < min_val:
                 min_val = value
         return min_val
     
-    def _maxMove(self, player_num: int, board: Board, move: int, current_depth: int):
-        other_player_num = 1 if player_num == 2 else 2
-        board_copy = board.copy()
-        board_copy.drop_piece(move, player_num)
-        if board_copy.check_win(player_num):
-            return MAX_SCORE
-        if board_copy.board_is_full():
+    def _maxMove(self, board: Board, current_depth: int):
+        if board.check_win(self.min_player_number):
+            return MIN_SCORE
+        if board.board_is_full():
             return 0
         if current_depth == self.max_depth:
-            return board_copy.get_score(player_num=self.player_number)
+            return board.get_score(player_num=self.player_number)
         max_val = MIN_SCORE
-        valid_moves = board_copy.get_valid_moves()
+        valid_moves = board.get_valid_moves()
         for next_move in valid_moves:
-            value = self._minMove(other_player_num, board_copy, next_move, current_depth+1)
+            next_board = board.copy()
+            next_board.drop_piece(next_move, self.player_number)
+            value = self._minMove(next_board, current_depth+1)
             if value > max_val:
                 max_val = value
         return max_val

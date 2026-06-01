@@ -32,9 +32,9 @@ def main():
     parser.add_argument('-c', '--cols', type=int, default=7,
                         help="Number of columns on the board (default: 7)")
     parser.add_argument('-p1', '--player1', type=str, default="human", choices=["human", "random_bot", "minimax_bot"],
-                        help="Type of player for Player 1 (default: random_bot)")
+                        help="Type of player for Player 1 (default: human)")
     parser.add_argument('-p2', '--player2', type=str, default="minimax_bot", choices=["human", "random_bot", "minimax_bot"],
-                        help="Type of player for Player 2 (default: random_bot)")
+                        help="Type of player for Player 2 (default: minimax_bot)")
     parser.add_argument('-d1', '--depth1', type=int, default=3,
                         help="Depth of search for p1 (default: 3)")
     parser.add_argument('-d2', '--depth2', type=int, default=3,
