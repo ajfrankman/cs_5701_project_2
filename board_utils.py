@@ -1,7 +1,18 @@
 import numpy as np
 import random
+import copy
 from rich.console import Console
 from rich.table import Table
+
+OPTIMAL_EVAL_MATRIX = np.array([
+    [3, 4,  5,  7,  5, 4, 3],  # Row 5 (Top)
+    [4, 6,  8, 10,  8, 6, 4],  # Row 4
+    [5, 8, 11, 13, 11, 8, 5],  # Row 3
+    [5, 8, 11, 13, 11, 8, 5],  # Row 2
+    [4, 6,  8, 10,  8, 6, 4],  # Row 1
+    [3, 4,  5,  7,  5, 4, 3]   # Row 0 (Bottom)
+])
+FULL_BOARD_SCORE = 276
 
 class Board:
     # It is important to remember that while a numpy array is technically
@@ -13,6 +24,20 @@ class Board:
         self.max_rows = rows #if rows >=4 else 4
         self.max_cols = cols #if cols >=4 else 4
         self.grid = np.zeros((self.max_rows, self.max_cols), dtype=int)
+    
+    def copy(self):
+        new_board = copy.copy(self)
+        # copy.copy() is shallow, so need to copy the grid excplicity
+        new_board.grid = self.grid.copy()
+        return new_board
+
+    def get_score(self, player_num: int):
+        # Returns score between -1 and 1 (not inclusive)
+        other_player_num = 1 if player_num == 2 else 2
+        player_raw_score = np.sum(OPTIMAL_EVAL_MATRIX[self.grid == player_num])
+        other_player_raw_score = np.sum(OPTIMAL_EVAL_MATRIX[self.grid == other_player_num])
+        score = (player_raw_score - other_player_raw_score) / FULL_BOARD_SCORE
+        return score
 
     def board_is_full(self) -> bool:
         return np.all(self.grid != 0)
@@ -32,6 +57,10 @@ class Board:
             table.add_row(*row_cells)
         
         console.print(table)
+
+    def get_valid_moves(self) -> list[int]:
+        valid_moves = np.where(self.grid[5, :] == 0)[0]
+        return valid_moves
 
     def drop_piece(self, col: int, player: int) -> bool:
         '''
