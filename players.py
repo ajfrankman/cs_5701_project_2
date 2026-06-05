@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 
 MAX_SCORE = 1.0
 MIN_SCORE = -1.0
+DEPTH_WEIGHT = .00001
 
 class Player(ABC):
 
@@ -50,52 +51,66 @@ class MiniMaxAI(Player):
         # Add variables unique ONLY to the AI
         self.max_depth = max_depth
         self.min_player_number = 1 if player_number == 2 else 2
+        self.beta_boundary = float('inf')
 
     def get_move(self, board: Board):
+        # At the top level, alpha keeps getting more and more updated
+        # with the highest score. Every loop it gets passed down. 
         best_move = None # best column
         best_so_far = float('-inf') # Best value from move
         valid_moves = board.get_valid_moves()
         debug_dict = {}
+        alpha = float('-inf')
         for move in valid_moves:
             next_board = board.copy()
             next_board.drop_piece(move, self.player_number)
-            value = self._minMove(next_board, 1)
-            debug_dict[move] = value
-            if value > best_so_far:
-                best_so_far = value
+            value = self._min_move(next_board, 1, alpha, self.beta_boundary)
+            if value > alpha:
+                alpha = value
                 best_move = move
         return best_move
 
-    def _minMove(self, board: Board, current_depth: int):
+    def _min_move(self, board: Board, current_depth: int, alpha: float, beta: float):
+        # Note for the programmer to help my keep my sanity:
+        # I got rid of min_val. Because we check if the board is full, we are
+        # guaranteed to update beta at least once before returning it because in
+        # connect 4 there is always a valid move if it isn't a tie.
         if board.check_win(self.player_number):
-            return MAX_SCORE
+            # By subtracting the depth weight, we make deep wins less valuable than 
+            # shallow (sooner) wins. 
+            return MAX_SCORE - (current_depth * DEPTH_WEIGHT)
         if board.board_is_full():
             return 0
         if current_depth == self.max_depth:
             return board.get_score(player_num=self.player_number)
-        min_val = MAX_SCORE
+        
         valid_moves = board.get_valid_moves()
         for next_move in valid_moves:
             next_board = board.copy()
             next_board.drop_piece(next_move, self.min_player_number)
-            value = self._maxMove(next_board, current_depth+1)
-            if value < min_val:
-                min_val = value
-        return min_val
+            value = self._max_move(next_board, current_depth+1, alpha, beta)
+            beta = min(beta, value)
+            if beta <= alpha: break
+        
+        return beta
     
-    def _maxMove(self, board: Board, current_depth: int):
+    def _max_move(self, board: Board, current_depth: int, alpha: float, beta: float):
+        # No max_val. See note for _minMove
         if board.check_win(self.min_player_number):
-            return MIN_SCORE
+            # By subtracting the depths weight, we make deep losses more favorable than
+            # shallow (sooner) losses.
+            return MIN_SCORE + (current_depth * DEPTH_WEIGHT)
         if board.board_is_full():
             return 0
         if current_depth == self.max_depth:
             return board.get_score(player_num=self.player_number)
-        max_val = MIN_SCORE
+        
         valid_moves = board.get_valid_moves()
         for next_move in valid_moves:
             next_board = board.copy()
             next_board.drop_piece(next_move, self.player_number)
-            value = self._minMove(next_board, current_depth+1)
-            if value > max_val:
-                max_val = value
-        return max_val
+            value = self._min_move(next_board, current_depth+1, alpha, beta)
+            alpha = max(alpha, value)
+            if alpha >= beta: break
+        
+        return alpha
