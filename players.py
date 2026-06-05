@@ -53,14 +53,15 @@ class MiniMaxAI(Player):
         self.min_player_number = 1 if player_number == 2 else 2
         self.beta_boundary = float('inf')
 
+        self.total_states_explored = 0
+
     def get_move(self, board: Board):
         # At the top level, alpha keeps getting more and more updated
         # with the highest score. Every loop it gets passed down. 
         best_move = None # best column
-        best_so_far = float('-inf') # Best value from move
         valid_moves = board.get_valid_moves()
-        debug_dict = {}
         alpha = float('-inf')
+
         for move in valid_moves:
             next_board = board.copy()
             next_board.drop_piece(move, self.player_number)
@@ -68,6 +69,7 @@ class MiniMaxAI(Player):
             if value > alpha:
                 alpha = value
                 best_move = move
+        
         return best_move
 
     def _min_move(self, board: Board, current_depth: int, alpha: float, beta: float):
@@ -75,6 +77,7 @@ class MiniMaxAI(Player):
         # I got rid of min_val. Because we check if the board is full, we are
         # guaranteed to update beta at least once before returning it because in
         # connect 4 there is always a valid move if it isn't a tie.
+        self.total_states_explored += 1
         if board.check_win(self.player_number):
             # By subtracting the depth weight, we make deep wins less valuable than 
             # shallow (sooner) wins. 
@@ -96,6 +99,7 @@ class MiniMaxAI(Player):
     
     def _max_move(self, board: Board, current_depth: int, alpha: float, beta: float):
         # No max_val. See note for _minMove
+        self.total_states_explored += 1
         if board.check_win(self.min_player_number):
             # By subtracting the depths weight, we make deep losses more favorable than
             # shallow (sooner) losses.
